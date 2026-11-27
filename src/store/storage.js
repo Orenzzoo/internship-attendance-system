@@ -1,15 +1,14 @@
-// Everything lives in this browser's localStorage. Use Settings > Backup to move devices.
-export const STORAGE_KEY = 'nu-ojt-attendance:v1'
+// Personal settings stay on this device. Hours live in Supabase (see src/api).
+export const STORAGE_KEY = 'nu-ojt-settings:v2'
 
 export const DEFAULT_SETTINGS = {
-  name: '',
-  studentId: '',
+  studentId: '', // Supabase students.id of whoever uses this device
+  studentNumber: '',
   program: '',
   school: 'National University Fairview',
   term: 'Term 2',
   company: '',
   supervisor: '',
-  requiredHours: 400,
   startDate: '',
   expectedIn: '08:00',
   expectedOut: '17:00',
@@ -18,38 +17,19 @@ export const DEFAULT_SETTINGS = {
   workDays: [1, 2, 3, 4, 5],
 }
 
-export function emptyData() {
-  return { settings: { ...DEFAULT_SETTINGS }, entries: [] }
-}
-
-export function normalize(data) {
-  if (!data || typeof data !== 'object' || !Array.isArray(data.entries)) {
-    throw new Error('This file is not an attendance backup.')
-  }
-  return {
-    settings: { ...DEFAULT_SETTINGS, ...data.settings },
-    entries: data.entries.filter((e) => e && e.id && e.date && e.timeIn),
-  }
-}
-
-export function loadData() {
+export function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? normalize(JSON.parse(raw)) : emptyData()
+    return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_SETTINGS }
   } catch {
-    return emptyData()
+    return { ...DEFAULT_SETTINGS }
   }
 }
 
-export function saveData(data) {
+export function saveSettings(settings) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
   } catch {
-    // Storage blocked (private mode) or full: the app still works for this visit.
+    // Storage blocked (private mode): settings last for this visit only.
   }
-}
-
-export function newId() {
-  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
 }

@@ -3,22 +3,22 @@ import { AlertTriangle, LogIn, LogOut } from 'lucide-react'
 import { useAttendance } from '../store/context'
 import { useNow } from '../utils/useNow'
 import { formatDate, formatElapsed, formatHours, formatLongDate, formatTime, toDateKey } from '../utils/time'
-import { minutesOnDate } from '../utils/stats'
+import { isOpen, minutesOnDate } from '../utils/stats'
 import EntryModal from './EntryModal'
 
 export default function ClockCard() {
-  const { entries, timeIn, timeOut } = useAttendance()
+  const { entries, busy, timeIn, timeOut } = useAttendance()
   const now = useNow(1000)
   const [note, setNote] = useState('')
   const [fixing, setFixing] = useState(null)
 
-  const active = entries.find((e) => !e.timeOut)
+  const active = entries.find(isOpen)
   const todayKey = toDateKey(now)
   const forgotten = active && active.date !== todayKey
-  const loggedToday = minutesOnDate(entries.filter((e) => e.timeOut), todayKey, now)
+  const loggedToday = minutesOnDate(entries.filter((e) => !isOpen(e)), todayKey, now)
 
-  const handleOut = () => {
-    timeOut(note)
+  const handleOut = async () => {
+    await timeOut(note)
     setNote('')
   }
 
@@ -54,8 +54,8 @@ export default function ClockCard() {
             onChange={(e) => setNote(e.target.value)}
             placeholder="What did you work on today? (optional, saved on time out)"
           />
-          <button type="button" className="btn btn--out btn--big" onClick={handleOut}>
-            <LogOut size={20} /> Time out
+          <button type="button" className="btn btn--out btn--big" onClick={handleOut} disabled={busy}>
+            <LogOut size={20} /> {busy ? 'Saving…' : 'Time out'}
           </button>
         </>
       )}
@@ -65,8 +65,8 @@ export default function ClockCard() {
           <div className="clock__status clock__status--idle">
             {loggedToday > 0 ? `${formatHours(loggedToday)} logged today` : 'Not timed in yet'}
           </div>
-          <button type="button" className="btn btn--primary btn--big" onClick={timeIn}>
-            <LogIn size={20} /> {loggedToday > 0 ? 'Time in again' : 'Time in'}
+          <button type="button" className="btn btn--primary btn--big" onClick={timeIn} disabled={busy}>
+            <LogIn size={20} /> {busy ? 'Saving…' : loggedToday > 0 ? 'Time in again' : 'Time in'}
           </button>
         </>
       )}

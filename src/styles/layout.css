@@ -31,7 +31,8 @@
   letter-spacing: -0.02em;
 }
 .brand__mark--lg { width: 56px; height: 56px; font-size: 1.3rem; border-radius: 16px; }
-.brand__title { font-weight: 700; font-size: 1rem; }
+.brand__title { font-weight: 700; font-size: 1rem; white-space: nowrap; }
+.brand__sub { white-space: nowrap; }
 .brand__sub { font-size: 0.78rem; opacity: 0.75; }
 
 .nav { display: flex; gap: 4px; margin-left: auto; }
@@ -149,7 +150,7 @@
 }
 
 /* Phones: nav moves to a bottom tab bar */
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .header__inner { padding: 10px 16px; }
   .user__name { display: none; }
   .user { margin-left: auto; }

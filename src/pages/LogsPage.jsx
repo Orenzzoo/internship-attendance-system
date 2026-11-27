@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, Plus } from 'lucide-react'
+import { Download, History, Plus } from 'lucide-react'
 import { useAttendance } from '../store/context'
 import { useNow } from '../utils/useNow'
 import { monthOptions, sortEntries, workedMinutes } from '../utils/stats'
@@ -14,7 +14,7 @@ export default function LogsPage() {
   const months = monthOptions(entries, now)
   const [month, setMonth] = useState('all')
   const [query, setQuery] = useState('')
-  // null = closed, 'new' = add form, otherwise the entry being edited
+  // null = closed, 'new' / 'past' = add form, otherwise the entry being edited
   const [editing, setEditing] = useState(null)
 
   const q = query.trim().toLowerCase()
@@ -44,6 +44,9 @@ export default function LogsPage() {
         <div className="page__actions">
           <button type="button" className="btn btn--ghost" onClick={exportCsv} disabled={!entries.length}>
             <Download size={18} /> Export CSV
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={() => setEditing('past')}>
+            <History size={18} /> Log past hours
           </button>
           <button type="button" className="btn btn--primary" onClick={() => setEditing('new')}>
             <Plus size={18} /> Add entry
@@ -84,7 +87,11 @@ export default function LogsPage() {
       </section>
 
       {editing && (
-        <EntryModal entry={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+        <EntryModal
+          entry={typeof editing === 'string' ? null : editing}
+          mode={editing === 'past' ? 'past' : 'times'}
+          onClose={() => setEditing(null)}
+        />
       )}
     </div>
   )

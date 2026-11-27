@@ -1,12 +1,17 @@
 import { Pencil, Trash2 } from 'lucide-react'
-import { isForgotten, isLate, workedMinutes } from '../utils/stats'
+import { isForgotten, isHoursOnly, isLate, isOpen, workedMinutes } from '../utils/stats'
 import { formatDate, formatHours, formatTime } from '../utils/time'
+
+function timeLabel(entry, forgotten) {
+  if (isHoursOnly(entry)) return entry.carryOver ? 'Earlier hours' : 'Hours logged'
+  const end = forgotten ? '?' : entry.timeOut ? formatTime(entry.timeOut) : 'now'
+  return `${formatTime(entry.timeIn)} – ${end}`
+}
 
 // One attendance entry. Edit/delete buttons only show when handlers are given.
 export default function EntryRow({ entry, settings, now, onEdit, onDelete }) {
-  const late = isLate(entry, settings)
   const forgotten = isForgotten(entry, now)
-  const ongoing = !entry.timeOut && !forgotten
+  const ongoing = isOpen(entry) && !forgotten
 
   return (
     <li className="entry">
@@ -17,14 +22,15 @@ export default function EntryRow({ entry, settings, now, onEdit, onDelete }) {
 
       <div className="entry__main">
         <div className="entry__times">
-          {formatTime(entry.timeIn)} – {ongoing ? 'now' : forgotten ? '?' : formatTime(entry.timeOut)}
+          {timeLabel(entry, forgotten)}
           <span className="entry__weekday">{formatDate(entry.date, { weekday: 'long' })}</span>
         </div>
         <div className="entry__tags">
           {ongoing && <span className="tag tag--info">On duty</span>}
           {forgotten && <span className="tag tag--danger">No time out</span>}
-          {late && <span className="tag tag--warn">Late</span>}
-          {entry.manual && <span className="tag">Added manually</span>}
+          {isLate(entry, settings) && <span className="tag tag--warn">Late</span>}
+          {isHoursOnly(entry) && <span className="tag tag--gold">{entry.carryOver ? 'Several days' : 'Hours only'}</span>}
+          {entry.manual && !isHoursOnly(entry) && <span className="tag">Added manually</span>}
         </div>
         {entry.notes && <p className="entry__notes">{entry.notes}</p>}
       </div>

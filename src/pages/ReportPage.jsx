@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Printer } from 'lucide-react'
 import { useAttendance } from '../store/context'
-import { isForgotten, monthOptions, sortEntries, workedMinutes } from '../utils/stats'
+import { isForgotten, isHoursOnly, monthOptions, sortEntries, workedMinutes } from '../utils/stats'
 import { formatDate, formatHours, formatMonth, formatTime, monthKey, toDecimalHours } from '../utils/time'
 
 // Printable Daily Time Record for one month, ready for the supervisor's signature.
@@ -19,8 +19,8 @@ export default function ReportPage() {
 
   const info = [
     ['Name', settings.name],
-    ['Student no.', settings.studentId],
-    ['Program', settings.program],
+    ['Student no.', settings.studentNumber],
+    ['Program / section', [settings.program, settings.section].filter(Boolean).join(' · ')],
     ['Company / office', settings.company],
     ['Supervisor', settings.supervisor],
     ['Period', formatMonth(month)],
@@ -76,8 +76,14 @@ export default function ReportPage() {
               {rows.map((e) => (
                 <tr key={e.id}>
                   <td>{formatDate(e.date)}</td>
-                  <td>{formatTime(e.timeIn)}</td>
-                  <td>{e.timeOut ? formatTime(e.timeOut) : isForgotten(e) ? 'No time out' : 'On duty'}</td>
+                  {isHoursOnly(e) ? (
+                    <td colSpan="2" className="muted">{e.carryOver ? 'Earlier hours (several days)' : 'Hours logged'}</td>
+                  ) : (
+                    <>
+                      <td>{formatTime(e.timeIn)}</td>
+                      <td>{e.timeOut ? formatTime(e.timeOut) : isForgotten(e) ? 'No time out' : 'On duty'}</td>
+                    </>
+                  )}
                   <td className="num">{toDecimalHours(workedMinutes(e))}</td>
                   <td className="dtr__notes">{e.notes}</td>
                 </tr>

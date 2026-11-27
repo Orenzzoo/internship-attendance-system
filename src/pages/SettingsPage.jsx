@@ -27,10 +27,10 @@ export default function SettingsPage() {
 
   const submit = (e) => {
     e.preventDefault()
+    // name, section and requiredHours come from the class list, not this form.
+    const { name: _name, section: _section, requiredHours: _required, ...rest } = values
     saveSettings({
-      ...values,
-      name: values.name.trim(),
-      requiredHours: Number(values.requiredHours) || 400,
+      ...rest,
       breakMinutes: Number(values.breakMinutes) || 0,
       graceMinutes: Number(values.graceMinutes) || 0,
     })
@@ -49,6 +49,9 @@ export default function SettingsPage() {
       <form className="settings" onSubmit={submit}>
         <section className="card">
           <h2>Profile</h2>
+          <p className="muted">
+            Logging hours as <strong>{settings.name}</strong> ({settings.section}) · {settings.requiredHours} hours required
+          </p>
           <ProfileFields values={values} onChange={update} />
         </section>
 
@@ -56,6 +59,9 @@ export default function SettingsPage() {
           <h2>Schedule</h2>
           <p className="muted">Used to flag late time-ins and estimate your finish date.</p>
           <div className="form-grid">
+            <Field label="Term" wide>
+              <input value={values.term} onChange={set('term')} placeholder="Term 2" />
+            </Field>
             <Field label="Expected time in">
               <input type="time" value={values.expectedIn} onChange={set('expectedIn')} required />
             </Field>
@@ -93,8 +99,7 @@ export default function SettingsPage() {
         </div>
       </form>
 
-      {/* A restore replaces the settings, so refresh the form with them. */}
-      <DataCard onRestored={(next) => { setValues(next); setSaved(false) }} />
+      <DataCard />
     </div>
   )
 }

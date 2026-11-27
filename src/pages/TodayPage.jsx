@@ -1,4 +1,5 @@
-import { ArrowRight } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowRight, History } from 'lucide-react'
 import { useAttendance } from '../store/context'
 import { useNow } from '../utils/useNow'
 import { computeStats, lastNDays, sortEntries } from '../utils/stats'
@@ -8,6 +9,7 @@ import ProgressCard from '../components/ProgressCard'
 import StatTiles from '../components/StatTiles'
 import WeekChart from '../components/WeekChart'
 import EntryRow from '../components/EntryRow'
+import EntryModal from '../components/EntryModal'
 
 export default function TodayPage({ onNavigate }) {
   const { entries, settings } = useAttendance()
@@ -15,15 +17,29 @@ export default function TodayPage({ onNavigate }) {
   const now = useNow(30000)
   const stats = computeStats(entries, settings, now)
   const recent = sortEntries(entries).slice(0, 4)
+  const [loggingPast, setLoggingPast] = useState(false)
 
   return (
     <div className="page">
       <div className="page__head">
         <div>
           <h1>{greeting(now)}, {settings.name.split(' ')[0]}</h1>
-          <p className="muted">{settings.company || 'Your internship'} · {settings.term}</p>
+          <p className="muted">{settings.section} · {settings.company || 'Your internship'} · {settings.term}</p>
         </div>
+        <button type="button" className="btn btn--ghost" onClick={() => setLoggingPast(true)}>
+          <History size={18} /> Log past hours
+        </button>
       </div>
+
+      {!entries.length && (
+        <div className="banner banner--gold">
+          <History size={18} />
+          <span>
+            Already rendered hours before this app? <strong>Log past hours</strong> to add them as one
+            total or day by day.
+          </span>
+        </div>
+      )}
 
       <div className="today-grid">
         <ClockCard />
@@ -53,6 +69,8 @@ export default function TodayPage({ onNavigate }) {
           )}
         </section>
       </div>
+
+      {loggingPast && <EntryModal mode="past" onClose={() => setLoggingPast(false)} />}
     </div>
   )
 }

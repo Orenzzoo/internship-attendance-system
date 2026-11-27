@@ -1,21 +1,24 @@
 import { useState } from 'react'
-import { ArrowRight, Clock, FileText, Target } from 'lucide-react'
+import { ArrowRight, Clock, FileText, Users } from 'lucide-react'
 import { useAttendance } from '../store/context'
+import Field from '../components/Field'
 import ProfileFields from '../components/ProfileFields'
+import StudentSelect from '../components/StudentSelect'
 
 const POINTS = [
-  { icon: Clock, text: 'Time in and out with one tap' },
-  { icon: Target, text: 'See how close you are to your required hours' },
+  { icon: Clock, text: 'Time in and out with one tap, or log past hours by hand' },
+  { icon: Users, text: 'See your whole class’s progress to 400 hours' },
   { icon: FileText, text: 'Print a monthly DTR for your supervisor to sign' },
 ]
 
 export default function Onboarding() {
-  const { settings, saveSettings } = useAttendance()
+  const { settings, students, chooseStudent } = useAttendance()
+  const [studentId, setStudentId] = useState('')
   const [values, setValues] = useState(settings)
 
   const submit = (e) => {
     e.preventDefault()
-    saveSettings({ ...values, name: values.name.trim(), requiredHours: Number(values.requiredHours) })
+    chooseStudent(studentId, values)
   }
 
   return (
@@ -32,12 +35,27 @@ export default function Onboarding() {
       </section>
 
       <form className="card onboard__form" onSubmit={submit}>
-        <h2>Set up your profile</h2>
-        <p className="muted">You can change any of this later in Settings.</p>
-        <ProfileFields values={values} onChange={setValues} />
-        <button className="btn btn--primary btn--block" type="submit">
-          Get started <ArrowRight size={18} />
-        </button>
+        <h2>Who are you?</h2>
+        <p className="muted">Pick your name from the class list. The rest is optional and only shows on your DTR.</p>
+
+        {students.length ? (
+          <>
+            <div className="form-grid">
+              <Field label="Your name" wide>
+                <StudentSelect students={students} value={studentId} onChange={setStudentId} />
+              </Field>
+            </div>
+            <ProfileFields values={values} onChange={setValues} />
+            <button className="btn btn--primary btn--block" type="submit" disabled={!studentId}>
+              Get started <ArrowRight size={18} />
+            </button>
+          </>
+        ) : (
+          <p className="empty">
+            The class list is empty. Whoever set up Supabase needs to add the students
+            (see the README).
+          </p>
+        )}
       </form>
     </div>
   )
