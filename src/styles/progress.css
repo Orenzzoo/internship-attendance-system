@@ -1,4 +1,4 @@
-/* Progress bars, the progress card, and the class list */
+/* Progress bar toward the required hours */
 .bar__track {
   position: relative;
   height: 12px;
@@ -6,7 +6,7 @@
   background: var(--nu-blue-soft);
   overflow: hidden;
 }
-.bar--lg .bar__track { height: 18px; }
+.bar--lg .bar__track { height: 16px; }
 .bar--sm .bar__track { height: 8px; }
 .bar__fill {
   height: 100%;
@@ -26,71 +26,3 @@
 /* Keep the 0h and last labels inside the card edges */
 .bar__ticks span:first-child { transform: none; }
 .bar__ticks span:last-child { transform: translateX(-100%); }
-
-.progress { display: flex; flex-direction: column; justify-content: center; }
-.progress__percent { font-size: 1.5rem; font-weight: 800; color: var(--nu-blue-dark); letter-spacing: -0.02em; }
-.progress__numbers {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 12px;
-}
-.progress__numbers strong { display: block; font-size: 1.9rem; letter-spacing: -0.03em; line-height: 1.1; }
-.progress__numbers span { color: var(--muted); font-size: 0.85rem; }
-.progress__left { text-align: right; }
-.progress__left strong { font-size: 1.25rem; color: var(--muted); }
-
-/* Class page */
-.class-summary { display: grid; gap: 18px; }
-.class-summary__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.class-summary__stats div {
-  display: flex;
-  flex-direction: column;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--bg);
-}
-.class-summary__stats strong { font-size: 1.3rem; }
-.class-summary__stats span { color: var(--muted); font-size: 0.8rem; }
-.class-summary__label { font-size: 0.88rem; font-weight: 600; margin-bottom: 8px; }
-
-.roster { list-style: none; margin: 0; padding: 0; }
-.roster__row {
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: center;
-  padding: 14px 8px;
-  border-top: 1px solid var(--border);
-  border-radius: 12px;
-}
-.roster__row:first-child { border-top: 0; }
-.roster__row.is-me { background: var(--nu-gold-soft); border-top-color: transparent; }
-.roster__row.is-me + .roster__row { border-top-color: transparent; }
-
-.roster__avatar {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--nu-blue-soft);
-  color: var(--nu-blue);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-.roster__main { display: grid; gap: 6px; min-width: 0; }
-.roster__name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 600; font-size: 0.95rem; }
-.roster__meta { font-size: 0.8rem; color: var(--muted); }
-.roster__hours { text-align: right; white-space: nowrap; }
-.roster__hours strong { display: block; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
-.roster__hours span { font-size: 0.8rem; color: var(--muted); }
-
-.tag svg { vertical-align: -2px; }
-
-@media (max-width: 560px) {
-  .roster__row { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; padding: 12px 4px; }
-  .roster__avatar { width: 34px; height: 34px; font-size: 0.72rem; }
-  .class-summary__stats strong { font-size: 1.05rem; }
-  .progress__numbers strong { font-size: 1.5rem; }
-}

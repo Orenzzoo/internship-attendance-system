@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AttendanceContext } from './context'
-import { loadSettings, saveSettings } from './storage'
 import { api, isDemo } from '../api'
 import { isOpen } from '../utils/stats'
 import { toDateKey } from '../utils/time'
 
+// Lunch break taken off clocked shifts longer than 5 hours.
+const BREAK_MINUTES = 60
+const REFRESH_MS = 30000
+
+// One shared laptop: everyone's entries are loaded, any student can time in or out.
 export default function AttendanceProvider({ children }) {
-  const [local, setLocal] = useState(loadSettings)
   const [students, setStudents] = useState([])
   const [entries, setEntries] = useState([])
   const [status, setStatus] = useState('loading') // loading | ready | error
@@ -15,20 +18,14 @@ export default function AttendanceProvider({ children }) {
   const [busy, setBusy] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
 
-  useEffect(() => saveSettings(local), [local])
-
-  // Load the class list, then this student's entries.
   useEffect(() => {
     let cancelled = false
     setStatus('loading')
-    api.listStudents()
-      .then(async (list) => {
-        const mine = local.studentId && list.some((s) => s.id === local.studentId)
-          ? await api.listEntries(local.studentId)
-          : []
+    Promise.all([api.listStudents(), api.listAllEntries()])
+      .then(([studentList, entryList]) => {
         if (cancelled) return
-        setStudents(list)
-        setEntries(mine)
+        setStudents(studentList)
+        setEntries(entryList)
         setStatus('ready')
       })
       .catch((err) => {
@@ -37,20 +34,21 @@ export default function AttendanceProvider({ children }) {
         setStatus('error')
       })
     return () => { cancelled = true }
-  }, [local.studentId, reloadKey])
+  }, [reloadKey])
 
-  // Pick up changes made on another device (timed in on the phone, viewing on a laptop).
+  // Pick up time-ins made on other devices.
   useEffect(() => {
-    if (!local.studentId) return
-    const onVisible = () => {
+    const refresh = () => {
       if (document.visibilityState !== 'visible') return
-      api.listEntries(local.studentId).then(setEntries).catch(() => {})
+      api.listAllEntries().then(setEntries).catch(() => {})
     }
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [local.studentId])
-
-  const student = students.find((s) => s.id === local.studentId) || null
+    const id = setInterval(refresh, REFRESH_MS)
+    document.addEventListener('visibilitychange', refresh)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', refresh)
+    }
+  }, [])
 
   // Runs a save, shows a message if it fails, and blocks double taps meanwhile.
   const run = useCallback(async (task) => {
@@ -59,7 +57,7 @@ export default function AttendanceProvider({ children }) {
     try {
       return await task()
     } catch (err) {
-      setSaveError(err.message || 'Could not save. Check your connection and try again.')
+      setSaveError(err.message || 'Could not save. Check the internet connection and try again.')
       return null
     } finally {
       setBusy(false)
@@ -68,41 +66,43 @@ export default function AttendanceProvider({ children }) {
 
   const actions = useMemo(() => {
     const replace = (saved) => setEntries((list) => list.map((e) => (e.id === saved.id ? saved : e)))
+    const openEntry = (studentId) => entries.find((e) => e.studentId === studentId && isOpen(e))
 
     return {
-      saveSettings: (patch) => setLocal((s) => ({ ...s, ...patch })),
-      chooseStudent: (studentId, patch = {}) => setLocal((s) => ({ ...s, ...patch, studentId })),
-      forgetStudent: () => setLocal((s) => ({ ...s, studentId: '' })),
       reload: () => setReloadKey((k) => k + 1),
       dismissError: () => setSaveError(''),
 
-      timeIn: () => run(async () => {
-        if (entries.some(isOpen)) return
+      timeIn: (studentId) => run(async () => {
+        if (openEntry(studentId)) throw new Error('Already timed in.')
         const now = new Date()
-        const saved = await api.addEntry(local.studentId, {
+        const saved = await api.addEntry(studentId, {
           date: toDateKey(now),
           timeIn: now.toISOString(),
           timeOut: null,
           minutes: null,
-          breakMinutes: Number(local.breakMinutes) || 0,
+          breakMinutes: BREAK_MINUTES,
           notes: '',
           manual: false,
           carryOver: false,
         })
         setEntries((list) => [...list, saved])
+        return saved
       }),
 
-      timeOut: (notes) => run(async () => {
-        const open = entries.find(isOpen)
-        if (!open) return
-        replace(await api.updateEntry(open.id, {
+      // Returns the saved entry and what it was before, so the toast can undo it.
+      timeOut: (studentId, notes) => run(async () => {
+        const open = openEntry(studentId)
+        if (!open) throw new Error('Not timed in.')
+        const saved = await api.updateEntry(open.id, {
           timeOut: new Date().toISOString(),
           notes: notes?.trim() || open.notes,
-        }))
+        })
+        replace(saved)
+        return { saved, previous: open }
       }),
 
-      addEntry: (entry) => run(async () => {
-        const saved = await api.addEntry(local.studentId, { ...entry, manual: true })
+      addEntry: (studentId, entry) => run(async () => {
+        const saved = await api.addEntry(studentId, { ...entry, manual: true })
         setEntries((list) => [...list, saved])
         return saved
       }),
@@ -119,19 +119,11 @@ export default function AttendanceProvider({ children }) {
         return true
       }),
     }
-  }, [entries, local.studentId, local.breakMinutes, run])
-
-  // Components read one settings object; name and required hours come from the class list.
-  const settings = useMemo(() => ({
-    ...local,
-    name: student?.fullName || '',
-    section: student?.section || '',
-    requiredHours: student?.requiredHours || 400,
-  }), [local, student])
+  }, [entries, run])
 
   const value = useMemo(() => ({
-    settings, student, students, entries, status, loadError, saveError, busy, isDemo, ...actions,
-  }), [settings, student, students, entries, status, loadError, saveError, busy, actions])
+    students, entries, status, loadError, saveError, busy, isDemo, ...actions,
+  }), [students, entries, status, loadError, saveError, busy, actions])
 
   return <AttendanceContext.Provider value={value}>{children}</AttendanceContext.Provider>
 }
