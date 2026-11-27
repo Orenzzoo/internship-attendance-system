@@ -57,6 +57,20 @@ export function initials(name) {
   return name.split(/\s+/).filter((p) => /^[A-Za-z]/.test(p)).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
 }
 
+const SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v'])
+
+// Last word of the name, skipping suffixes: "Ricardo (Abat) Antonio Jr" -> "Antonio".
+export function surname(name) {
+  const words = name.replace(/[.,]/g, '').split(/\s+/).filter(Boolean)
+  while (words.length > 1 && SUFFIXES.has(words.at(-1).toLowerCase())) words.pop()
+  return words.at(-1) || name
+}
+
+// Class-list order: by surname, then by full name for anyone sharing one.
+export function compareBySurname(a, b) {
+  return surname(a).localeCompare(surname(b)) || a.localeCompare(b)
+}
+
 export function firstName(name) {
   return name.split(' ')[0]
 }

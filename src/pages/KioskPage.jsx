@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { useAttendance } from '../store/context'
 import { useNow } from '../utils/useNow'
-import { buildRows, matchesQuery } from '../utils/roster'
+import { buildRows, compareBySurname, matchesQuery } from '../utils/roster'
 import StudentCard from '../components/StudentCard'
 import StudentPanel from '../components/StudentPanel'
 import Toast from '../components/Toast'
@@ -17,9 +17,9 @@ export default function KioskPage() {
   const [toast, setToast] = useState(null)
   const searchRef = useRef(null)
 
-  // A to Z by name across both sections, so a name is easy to spot.
+  // A to Z by surname across both sections, like a class list.
   const rows = buildRows(students, entries, now)
-    .sort((a, b) => a.student.fullName.localeCompare(b.student.fullName))
+    .sort((a, b) => compareBySurname(a.student.fullName, b.student.fullName))
   const sections = [...new Set(students.map((s) => s.section))]
   const shown = rows.filter(
     (r) => (section === 'all' || r.student.section === section) && matchesQuery(r.student.fullName, query),
