@@ -17,7 +17,9 @@ export default function KioskPage() {
   const [toast, setToast] = useState(null)
   const searchRef = useRef(null)
 
+  // A to Z by name across both sections, so a name is easy to spot.
   const rows = buildRows(students, entries, now)
+    .sort((a, b) => a.student.fullName.localeCompare(b.student.fullName))
   const sections = [...new Set(students.map((s) => s.section))]
   const shown = rows.filter(
     (r) => (section === 'all' || r.student.section === section) && matchesQuery(r.student.fullName, query),
